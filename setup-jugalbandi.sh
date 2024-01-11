@@ -222,5 +222,5 @@ az role assignment create \
 
 # Write output to the file
 echo "Output File Path: $AZ_SCRIPTS_OUTPUT_PATH"
-echo '{"result": {"API FQDN": "$container_app_fqdn"}}' > $AZ_SCRIPTS_OUTPUT_PATH
+echo '{"result": {"API FQDN": "'$container_app_fqdn'"}}' > $AZ_SCRIPTS_OUTPUT_PATH
 cat $AZ_SCRIPTS_OUTPUT_PATH
