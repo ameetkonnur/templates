@@ -154,5 +154,11 @@
         "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('rgName'))]"
       ]
     }
-  ]
+  ],
+  "outputs": {
+    "Property1OutputVar": {
+        "value": "[reference('runBashWithOutputs').outputs.result.property1]",
+        "type": "string"
+    }      
+  }
 }
