@@ -1,0 +1,158 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "managedIdentityName": {
+        "type": "string",
+        "defaultValue": "jgmanagedidentity",
+        "metadata": {
+            "description": "Name of the managed identity"
+        }
+    },
+    "rgName": {
+      "type": "string",
+      "defaultValue": "[concat('rgjugalbandi', utcNow())]",
+      "metadata": {
+        "description": "Name of the resourceGroup to create"
+      }
+    },
+    "rgLocation": {
+      "type": "string",
+      "defaultValue": "eastus2",
+      "metadata": {
+        "description": "Location for the resourceGroup"
+      }
+    },
+    "roleDefinitionId": {
+      "type": "string",
+      "defaultValue": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+      "metadata": {
+        "description": "roleDefinition to apply to the resourceGroup - default is Owner"
+      }
+    },
+    "roleAssignmentName": {
+      "type": "string",
+      "defaultValue": "[guid(parameters('roleDefinitionId'), parameters('rgName'))]",
+      "metadata": {
+        "description": "Unique name for the roleAssignment in the format of a guid"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2019-10-01",
+      "name": "[parameters('rgName')]",
+      "location": "[parameters('rgLocation')]",
+      "tags": {
+        "Note": "subscription level deployment"
+      },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "create-jugalbandi-resources",
+      "resourceGroup": "[parameters('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "managedIdentityName": {
+            "value": "[parameters('managedIdentityName')]"
+          },
+          "roleDefinitionId": {
+            "value": "[parameters('roleDefinitionId')]"
+          },
+          "roleAssignmentName": {
+            "value": "[parameters('roleAssignmentName')]"
+          },
+          "rgName": {
+            "value": "[parameters('rgName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "managedIdentityName" : {
+              "type" : "string",
+              "metadata": {
+                "description": "Name of the managed identity"
+              }
+            },
+            "roleDefinitionId": {
+              "type": "string",
+              "metadata": {
+                "description": "roleDefinition to apply to the resourceGroup - default is Owner"
+              }
+            },
+            "roleAssignmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Unique name for the roleAssignment in the format of a guid"
+              }
+            },
+            "rgName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the resourceGroup to create"
+              }
+            }
+          },
+          "resources": [
+            {
+                "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                "apiVersion": "2018-11-30",
+                "name": "[parameters('managedIdentityName')]",
+                "location": "[resourceGroup().location]"
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2020-04-01-preview",
+              "name": "[guid(parameters('roleAssignmentName'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', parameters('roleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), '2018-11-30').principalId]"
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "runShellScript",
+              "location": "eastus2",
+              "kind": "AzureCLI",
+              "identity": {
+                  "type": "UserAssigned",
+                  "userAssignedIdentities": {
+                      "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]": {}
+                  }
+              },
+              "properties": {
+                "azCliVersion": "2.52.0",
+                "environmentVariables": [
+                  {
+                    "name": "rg_name",
+                    "value": "[parameters('rgName')]"
+                  }
+                ],
+                "primaryScriptUri": "https://jugalbandi.blob.core.windows.net/audiofiles/setup-jugalbandi.sh",
+                "timeout": "PT30M",
+                "cleanupPreference": "OnSuccess",
+                "retentionInterval": "P1D"
+              },
+              "dependsOn": [
+                "[guid(parameters('roleAssignmentName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('rgName'))]"
+      ]
+    }
+  ]
+}
