@@ -14,8 +14,8 @@ languages:
 ---
 # Create Jugalbandi QA Service API on Azure
 
-This ARM template requires you to have atleast Contributor Permissions at the Subscription Level.
-Pre-requisites
+Pre-requisites for running this ARM template.
+
 - Azure Subscription with Owner access.
 - Azure OpenAI whitelisting completed for the Susbcription.
 - Azure Azur OpenAI quota's assigned.
