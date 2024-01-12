@@ -33,13 +33,19 @@ subscription_id=$(az account show | jq -r .id)
 az group create --name $rg_name --location $preferred_region
 
 # create Speech, Translation & Azure OpenAI Resource
-az cognitiveservices account create \
+error_message=$(az cognitiveservices account create \
 --name $azureopenai_account \
 --resource-group $rg_name \
 --location $azureopenai_region \
 --kind OpenAI \
 --sku S0 \
---custom-domain $azureopenai_account
+--custom-domain $azureopenai_account)
+
+# Check if the command was successful
+if [ $? -ne 0 ]; then
+    echo "Error: $error_message"
+    exit 1
+fi
 
 # create Speech Resource
 az cognitiveservices account create \
